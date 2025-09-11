@@ -6,8 +6,7 @@
 ![PyTorch](https://img.shields.io/badge/PyTorch-1.12%2B-red.svg)
 ![OS](https://img.shields.io/badge/OS-Linux%20%7C%20macOS%20%7C%20Windows-555.svg)
 
-> 🚀 A clean, reproducible implementation of **BiGAT-Fusion** with a feature-view GAT, a bidirectional bipartite GAT, node-wise gated fusion, and a Residual-MoE decoder — plus a 10×10 cross-validation runner.
-
+> 🚀 Official PyTorch implementation of our paper: "BiGAT-Fusion: Bidirectional Graph Attention with Node-wise Gated Fusion for Drug–Disease Association Prediction".
 ---
 
 ## ✨ Highlights
