@@ -15,7 +15,7 @@
 - 🧠 **Two-view encoders**: feature-view GAT (drug/drug & disease/disease kNN graphs) + topology-view **Bi-GAT** (drug⇄disease).
 - 🔀 **Node-wise gated fusion**: type-specific gates adaptively mix feature and topology embeddings per node.
 - 🧩 **Residual-MoE head**: MLP main path + **low-rank bilinear** residual with a bounded pairwise gate.
-- 🧪 **Rigorous CV**: 10×10 cross-validation; validation-driven LR scheduling; unweighted BCE with negative sampling.
+- 🧪 **Rigorous CV**: 10×10 cross-validation; validation-driven LR scheduling; BCE with negative sampling.
 - 📊 **Artifacts for analysis**: per-fold metrics, checkpoints, attentions (both directions), and fusion gates.
 
 ---
