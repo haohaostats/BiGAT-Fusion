@@ -77,7 +77,7 @@ The loader supports four common DDA benchmark formats:
 ## ▶️ Reproduce 10×10 CV
 
 ```bash
-python run_fullcv.py --mat_path datasets/Gdataset.mat --folds 10 --repeats 10 --device cuda
+python run_fullcv.py --mat_path data/Gdataset/Gdataset.mat --folds 10 --repeats 10 --device cuda
 ```
 
 ### 🔧 Key Defaults
