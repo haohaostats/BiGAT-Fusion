@@ -127,7 +127,7 @@ def run_once(args):
 
             opt   = Adam(param_groups, lr=args.lr)
             sched = ReduceLROnPlateau(opt, mode='max', factor=0.5, patience=args.lr_patience,
-                                      threshold=1e-4, min_lr=1e-5, verbose=False)
+                                      threshold=1e-4, min_lr=1e-5)
             criterion = nn.BCEWithLogitsLoss()
 
             loader = DataLoader(
