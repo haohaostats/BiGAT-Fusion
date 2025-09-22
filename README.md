@@ -1,12 +1,13 @@
 
-# BiGAT-Fusion · Bidirectional Graph Attention with Node-wise Gated Fusion for Drug–Disease Association Prediction
+# BiGAT-Fusion: Bidirectional Graph Attention with Node-wise Gated Fusion for Drug Repurposing via Drug–Disease Association Prediction
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-lightgrey.svg)](#-license)
 ![Python](https://img.shields.io/badge/Python-3.8%2B-blue.svg)
 ![PyTorch](https://img.shields.io/badge/PyTorch-1.12%2B-red.svg)
 ![OS](https://img.shields.io/badge/OS-Linux%20%7C%20macOS%20%7C%20Windows-555.svg)
 
-> 🚀 Official PyTorch implementation of our paper: "BiGAT-Fusion: Bidirectional Graph Attention with Node-wise Gated Fusion for Drug–Disease Association Prediction".
+> 🚀 Official PyTorch implementation of our paper: "BiGAT-Fusion: Bidirectional Graph Attention with Node-wise Gated Fusion for Drug
+Repurposing via Drug–Disease Association Prediction".
 ---
 
 ## ✨ Highlights
