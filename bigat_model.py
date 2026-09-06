@@ -157,12 +157,27 @@ class BiGATFusionModel(nn.Module):
                  *,
                  embed_dim: int = 64,
                  hidden_dim: int = 64,
-                 dropout: float = 0.2):
+                 dropout: float = 0.2,
+                 embedding_init: str = "pytorch",
+                 fusion_gate_bias: float = 0.0,
+                 drug_topology_dropout: float = 0.0,
+                 disease_topology_dropout: float = 0.0):
         super().__init__()
         self.embed_dim = embed_dim
 
         self.drug_emb    = nn.Embedding(n_drugs, embed_dim)
         self.disease_emb = nn.Embedding(n_diseases, embed_dim)
+        if embedding_init == "scaled_normal":
+            nn.init.normal_(self.drug_emb.weight, std=embed_dim ** -0.5)
+            nn.init.normal_(self.disease_emb.weight, std=embed_dim ** -0.5)
+        elif embedding_init == "xavier":
+            nn.init.xavier_uniform_(self.drug_emb.weight)
+            nn.init.xavier_uniform_(self.disease_emb.weight)
+        elif embedding_init != "pytorch":
+            raise ValueError(f"Unknown embedding initialization: {embedding_init}")
+
+        self.drug_topology_dropout = drug_topology_dropout
+        self.disease_topology_dropout = disease_topology_dropout
 
         self.gat_drug_feat = GATLayer(embed_dim, embed_dim, dropout)
         self.gat_dis_feat  = GATLayer(embed_dim, embed_dim, dropout)
@@ -171,8 +186,8 @@ class BiGATFusionModel(nn.Module):
 
         self.gate_drug = nn.Linear(embed_dim * 2, 1)
         self.gate_dis  = nn.Linear(embed_dim * 2, 1)
-        nn.init.constant_(self.gate_drug.bias, 0.0)
-        nn.init.constant_(self.gate_dis.bias , 0.0)
+        nn.init.constant_(self.gate_drug.bias, fusion_gate_bias)
+        nn.init.constant_(self.gate_dis.bias, fusion_gate_bias)
 
         self.bias_d = nn.Embedding(n_drugs, 1)
         self.bias_p = nn.Embedding(n_diseases, 1)
@@ -231,6 +246,13 @@ class BiGATFusionModel(nn.Module):
             drug_init, dis_init,
             self.dis_to_drug_src, self.dis_to_drug_dst,
             self.drug_to_dis_src, self.drug_to_dis_dst)
+
+        if self.training and self.drug_topology_dropout > 0:
+            keep = torch.rand((drug_topo.size(0), 1), device=drug_topo.device)
+            drug_topo = drug_topo * (keep >= self.drug_topology_dropout)
+        if self.training and self.disease_topology_dropout > 0:
+            keep = torch.rand((dis_topo.size(0), 1), device=dis_topo.device)
+            dis_topo = dis_topo * (keep >= self.disease_topology_dropout)
 
         gate_d = torch.sigmoid(self.gate_drug(torch.cat([drug_feat, drug_topo], 1)))
         gate_p = torch.sigmoid(self.gate_dis (torch.cat([dis_feat , dis_topo], 1)))
