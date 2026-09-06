@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Leakage-safe pair-level and entity cold-start evaluation for BiGAT-Fusion."""
+"""Pair-level and entity cold-start evaluation for BiGAT-Fusion."""
 
 import argparse
 import csv
@@ -20,7 +20,7 @@ from data_loader import load_dataset
 
 
 class TrainingDataset(Dataset):
-    """Positive training edges with negatives drawn only from the training universe."""
+    """Build training samples from positive edges and sampled unknown pairs."""
 
     def __init__(self, pos_edges, neg_pool, neg_k=3, rng=None):
         if not pos_edges:
@@ -398,7 +398,7 @@ def main():
     parser.add_argument(
         "--fold_ids",
         type=lambda value: [int(item) for item in value.split(",")],
-        help="optional comma-separated zero-based folds, for example 0 or 0,1",
+        help="optional comma-separated zero-based folds (0 or 0,1)",
     )
     parser.add_argument("--repeats", type=int, default=10, help="pair-level repetitions")
     parser.add_argument("--cold_repeats", type=int, default=1)

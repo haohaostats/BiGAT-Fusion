@@ -1,7 +1,6 @@
 # BiGAT-Fusion
 
 PyTorch implementation of BiGAT-Fusion for drug–disease association prediction.
-Gdataset is included as a minimal example.
 
 ## Installation
 
@@ -14,9 +13,9 @@ pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/xpu
 
 ## Evaluation
 
-Training negatives are sampled only from the training universe. Topology graphs
-contain only positive training edges. Cold-start AP and AUROC are calculated per
-held-out entity and macro-averaged within each fold.
+The package supports pair-level, drug cold-start, and disease cold-start
+evaluation. Cold-start AP and AUROC are calculated per held-out entity and
+macro-averaged within each fold.
 
 ```powershell
 # Pair-level: 10 repetitions of 10-fold cross-validation
