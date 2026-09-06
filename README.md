@@ -21,15 +21,25 @@ macro-averaged within each fold.
 # Pair-level: 10 repetitions of 10-fold cross-validation
 python run_fullcv.py --protocol pair --folds 10 --repeats 10 --device xpu
 
-# Drug cold-start: 10 entity folds
-python run_fullcv.py --protocol drug_cold --folds 10 --cold_repeats 1 --device xpu
+# Drug cold-start: 10 repetitions of 10-fold cross-validation
+python run_fullcv.py --protocol drug_cold --folds 10 --cold_repeats 10 --device xpu
 
-# Disease cold-start: 10 entity folds
-python run_fullcv.py --protocol disease_cold --folds 10 --cold_repeats 1 --device xpu
+# Disease cold-start: 10 repetitions of 10-fold cross-validation
+python run_fullcv.py --protocol disease_cold --folds 10 --cold_repeats 10 --device xpu
 ```
 
-Use `--protocol all` to run all protocols. Use `--device auto` to select XPU,
-CUDA, or CPU automatically.
+Use `--protocol all` to run all protocols.
+
+## Code structure
+
+- `bigat_fusion/data.py`: dataset loading and similarity graphs
+- `bigat_fusion/layers.py`: graph attention and decoder layers
+- `bigat_fusion/model.py`: BiGAT-Fusion model
+- `bigat_fusion/protocols.py`: pair-level and cold-start partitions
+- `bigat_fusion/metrics.py`: AUROC and AUPRC calculation
+- `bigat_fusion/training.py`: fold training and model selection
+- `bigat_fusion/artifacts.py`: checkpoints, metrics, and interpretation outputs
+- `bigat_fusion/cli.py`: command-line configuration
 
 ## Outputs
 
