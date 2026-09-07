@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-"""Compatibility imports for dataset loading."""
-
 from bigat_fusion.data import knn_adjacency, load_dataset
 
 _knn_adj = knn_adjacency

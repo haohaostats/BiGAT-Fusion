@@ -1,5 +1,3 @@
-"""Training pair sampling and batch collation."""
-
 import random
 
 import torch
@@ -7,7 +5,7 @@ from torch.utils.data import Dataset
 
 
 class GlobalUnknownTrainingDataset(Dataset):
-    """Reproduce the original pair-level sampler over the complete unknown universe."""
+
 
     def __init__(self, positive_edges, n_drugs, n_diseases, positive_set,
                  negatives_per_positive=3, rng=None):
@@ -31,7 +29,7 @@ class GlobalUnknownTrainingDataset(Dataset):
 
 
 def collate_training_pairs(batch):
-    """Flatten positive-centered samples into model input tensors."""
+
     drug_indices, disease_indices, labels = [], [], []
     for positive, negatives in batch:
         for drug, disease, label in (positive, *negatives):

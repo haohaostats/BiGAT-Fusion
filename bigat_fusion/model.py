@@ -1,5 +1,3 @@
-"""BiGAT-Fusion model assembly."""
-
 import torch
 import torch.nn as nn
 
@@ -7,7 +5,7 @@ from .layers import BiGATLayer, GATLayer, ResidualMoEDecoder
 
 
 def edge_index(neighbor_lists):
-    """Convert adjacency lists to source and destination tensors."""
+
     source, destination = [], []
     for target, neighbors in enumerate(neighbor_lists):
         for neighbor in neighbors:
@@ -17,7 +15,7 @@ def edge_index(neighbor_lists):
 
 
 def bipartite_edge_index(drug_neighbors, disease_neighbors):
-    """Create directed edge tensors for both association graph directions."""
+
     disease_to_drug_src, disease_to_drug_dst = [], []
     for drug, diseases in drug_neighbors.items():
         for disease in diseases:
@@ -39,7 +37,7 @@ def bipartite_edge_index(drug_neighbors, disease_neighbors):
 
 
 class BiGATFusionModel(nn.Module):
-    """Fuse similarity-view and association-topology representations."""
+
 
     def __init__(
         self,

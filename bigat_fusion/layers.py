@@ -1,12 +1,10 @@
-"""Neural network layers used by BiGAT-Fusion."""
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 
 class ResidualMoEDecoder(nn.Module):
-    """Combine nonlinear and low-rank bilinear association scores."""
+
 
     def __init__(self, dim: int, hidden_dim: int, dropout: float = 0.2, rank: int = None):
         super().__init__()
@@ -52,7 +50,7 @@ class ResidualMoEDecoder(nn.Module):
 
 
 class GATLayer(nn.Module):
-    """Graph attention layer for a homogeneous similarity graph."""
+
 
     def __init__(self, in_dim: int, out_dim: int, dropout: float = 0.0, alpha: float = 0.2):
         super().__init__()
@@ -86,7 +84,7 @@ class GATLayer(nn.Module):
 
 
 class BiGATLayer(nn.Module):
-    """Bidirectional graph attention layer for the association graph."""
+
 
     def __init__(self, in_dim: int, out_dim: int, dropout: float = 0.0, alpha: float = 0.2):
         super().__init__()

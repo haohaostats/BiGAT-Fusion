@@ -1,10 +1,8 @@
-"""Pair-level cross-validation partitions."""
-
 import random
 
 
 def build_folds(items, fold_count, seed):
-    """Shuffle candidate pairs and distribute them across folds."""
+
     shuffled = list(items)
     random.Random(seed).shuffle(shuffled)
     return [shuffled[index::fold_count] for index in range(fold_count)]
@@ -15,7 +13,7 @@ def candidate_items(n_drugs, n_diseases):
 
 
 def build_domains(folds, test_fold):
-    """Reserve the next fold for validation and the remaining folds for training."""
+
     validation_fold = (test_fold + 1) % len(folds)
     training = [
         pair for index in range(len(folds))

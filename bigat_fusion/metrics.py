@@ -1,5 +1,3 @@
-"""Prediction and metric calculation."""
-
 import numpy as np
 import torch
 from sklearn import metrics
@@ -7,7 +5,7 @@ from sklearn import metrics
 
 @torch.no_grad()
 def predict_pairs(model, edges, device, batch_size):
-    """Predict continuous association scores for candidate pairs."""
+
     model.eval()
     drug_z, disease_z = model.get_fused_embeddings()
     scores = []
@@ -28,7 +26,7 @@ def predict_pairs(model, edges, device, batch_size):
 
 
 def pair_metrics(labels, scores):
-    """Calculate AUROC and area under the precision-recall curve."""
+
     false_positive_rate, true_positive_rate, _ = metrics.roc_curve(labels, scores)
     precision, recall, _ = metrics.precision_recall_curve(labels, scores)
     return {
@@ -38,7 +36,7 @@ def pair_metrics(labels, scores):
 
 
 def evaluate(model, edges, positive_set, device, batch_size):
-    """Evaluate continuous scores over the complete candidate fold."""
+
     scores = predict_pairs(model, edges, device, batch_size)
     labels = np.fromiter(
         (1 if edge in positive_set else 0 for edge in edges), dtype=np.int8

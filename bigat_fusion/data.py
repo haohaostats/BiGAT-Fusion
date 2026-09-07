@@ -1,5 +1,3 @@
-"""Dataset loading and similarity graph construction."""
-
 from pathlib import Path
 
 import numpy as np
@@ -7,7 +5,7 @@ import scipy.io as sio
 
 
 def knn_adjacency(similarity: np.ndarray, k: int) -> list[list[int]]:
-    """Build a directed k-nearest-neighbor list with self connections."""
+
     size = similarity.shape[0]
     adjacency = [[] for _ in range(size)]
     for index in range(size):
@@ -18,7 +16,7 @@ def knn_adjacency(similarity: np.ndarray, k: int) -> list[list[int]]:
 
 
 def load_dataset(path="data/Gdataset/Gdataset.mat", *, k=4, **_):
-    """Load association labels, similarities, and entity names from a MAT file."""
+
     mat_path = Path(path)
     if not mat_path.is_file() or mat_path.suffix.lower() != ".mat":
         raise FileNotFoundError(f"Dataset .mat file not found: {mat_path}")

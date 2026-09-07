@@ -1,5 +1,3 @@
-"""Command-line interface for cross-validation experiments."""
-
 import argparse
 
 from .data import load_dataset
@@ -12,7 +10,7 @@ def parse_fold_ids(value):
 
 
 def build_parser():
-    """Define experiment command-line arguments."""
+
     parser = argparse.ArgumentParser(description="Run BiGAT-Fusion cross-validation")
     parser.add_argument("--mat_path", default="data/Gdataset.mat")
     parser.add_argument("--embed_dim", type=int, default=128)
@@ -42,7 +40,7 @@ def build_parser():
 
 
 def validate_args(parser, args):
-    """Validate arguments that depend on other options."""
+
     if args.fold_ids is not None and any(
         fold < 0 or fold >= args.folds for fold in args.fold_ids
     ):

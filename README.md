@@ -20,11 +20,7 @@ python run_fullcv.py --device xpu
 ```
 
 Defaults: `data/Gdataset.mat`, 10 repetitions of 10-fold pair-level
-cross-validation, 4,000 epochs per fold. Each test fold uses the next fold for
-validation. Training uses BCE and three uniformly sampled global unknown pairs
-per positive. Validation AUPRC selects the checkpoint; validation AUROC controls
-the learning-rate scheduler. Test AUROC and trapezoidal AUPRC use every pair in
-the test fold.
+cross-validation, 4,000 epochs per fold.
 
 ## Code structure
 

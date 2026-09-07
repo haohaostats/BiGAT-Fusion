@@ -1,5 +1,3 @@
-"""Model construction and cross-validation training."""
-
 import random
 from pathlib import Path
 
@@ -18,7 +16,7 @@ from .sampling import GlobalUnknownTrainingDataset, collate_training_pairs
 
 
 def topology_neighbors(n_drugs, n_diseases, positive_edges):
-    """Build bipartite adjacency maps from training associations."""
+
     drug_neighbors = {drug: [] for drug in range(n_drugs)}
     disease_neighbors = {disease: [] for disease in range(n_diseases)}
     for drug, disease in positive_edges:
@@ -28,7 +26,7 @@ def topology_neighbors(n_drugs, n_diseases, positive_edges):
 
 
 def build_model(data, positive_edges, args, device):
-    """Construct a model and its fold-specific topology graph."""
+
     drug_neighbors, disease_neighbors = topology_neighbors(
         data["n_drugs"], data["n_diseases"], positive_edges
     )
@@ -46,7 +44,7 @@ def build_model(data, positive_edges, args, device):
 
 
 def build_optimizer(model, args):
-    """Create parameter groups and the learning-rate scheduler."""
+
     gate_parameters, backbone_parameters = [], []
     for name, parameter in model.named_parameters():
         if parameter.requires_grad:
@@ -73,7 +71,7 @@ def build_optimizer(model, args):
 
 def build_training_loader(positive_edges, positive_set, n_drugs, n_diseases,
                           args, repeat, fold):
-    """Sample uniformly from the complete unknown-pair universe."""
+
     dataset = GlobalUnknownTrainingDataset(
         positive_edges, n_drugs, n_diseases, positive_set, args.neg_k,
         random.Random(args.seed + repeat * 1000 + fold),
@@ -88,7 +86,7 @@ def build_training_loader(positive_edges, positive_set, n_drugs, n_diseases,
 
 
 def fit_fold(model, loader, validation_domain, positive_set, device, args):
-    """Train one fold and restore the checkpoint selected on validation AUPRC."""
+
     optimizer, scheduler = build_optimizer(model, args)
     criterion = nn.BCEWithLogitsLoss()
     best_validation, best_state = -1.0, None
@@ -151,7 +149,7 @@ def fold_record(
     selection,
     test_metrics,
 ):
-    """Assemble the metric row for one completed fold."""
+
     return {
         "Protocol": protocol,
         "Repeat": repeat,
@@ -172,7 +170,7 @@ def fold_record(
 
 
 def run_protocol(args, data, device):
-    """Run every requested repetition and fold for one protocol."""
+
     n_drugs, n_diseases = data["n_drugs"], data["n_diseases"]
     positive_set = data["assoc_pos_set"]
     dataset_name = Path(args.mat_path).stem

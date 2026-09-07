@@ -1,5 +1,3 @@
-"""Checkpoint, metric, and interpretation output."""
-
 import csv
 import json
 from pathlib import Path
@@ -13,7 +11,7 @@ def run_suffix(run_tag):
 
 
 def save_checkpoint(model, dataset_name, protocol, repeat, fold, run_tag=""):
-    """Save model parameters for a completed fold."""
+
     checkpoint_dir = Path("train")
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
     stem = f"{protocol}_{dataset_name}_r{repeat}_f{fold}{run_suffix(run_tag)}"
@@ -21,7 +19,7 @@ def save_checkpoint(model, dataset_name, protocol, repeat, fold, run_tag=""):
 
 
 def save_interpretation(model, path, metadata):
-    """Save fusion gates and bipartite attention weights."""
+
     path.parent.mkdir(parents=True, exist_ok=True)
     with torch.no_grad():
         model.eval()
@@ -62,7 +60,7 @@ def save_interpretation(model, path, metadata):
 
 
 def save_fold_outputs(model, record, dataset_name, protocol, repeat, fold, run_tag=""):
-    """Write model and interpretation outputs for one fold."""
+
     save_checkpoint(model, dataset_name, protocol, repeat, fold, run_tag)
     save_interpretation(
         model,
@@ -82,7 +80,7 @@ def save_fold_outputs(model, record, dataset_name, protocol, repeat, fold, run_t
 
 
 def save_metric_log(records, dataset_name, protocol, run_tag="", fold_ids=None):
-    """Write per-fold metrics to CSV and return its path."""
+
     result_dir = Path("results") / dataset_name
     result_dir.mkdir(parents=True, exist_ok=True)
     fold_suffix = "" if fold_ids is None else "_folds_" + "-".join(map(str, fold_ids))
