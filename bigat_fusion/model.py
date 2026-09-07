@@ -53,26 +53,18 @@ class BiGATFusionModel(nn.Module):
         embed_dim: int = 64,
         hidden_dim: int = 64,
         dropout: float = 0.2,
-        embedding_init: str = "pytorch",
-        fusion_gate_bias: float = 0.0,
-        drug_topology_dropout: float = 0.0,
-        disease_topology_dropout: float = 0.0,
     ):
         super().__init__()
         self.embed_dim = embed_dim
         self.drug_emb = nn.Embedding(n_drugs, embed_dim)
         self.disease_emb = nn.Embedding(n_diseases, embed_dim)
-        self._initialize_embeddings(embedding_init)
-
-        self.drug_topology_dropout = drug_topology_dropout
-        self.disease_topology_dropout = disease_topology_dropout
         self.gat_drug_feat = GATLayer(embed_dim, embed_dim, dropout)
         self.gat_dis_feat = GATLayer(embed_dim, embed_dim, dropout)
         self.bipartite_gat = BiGATLayer(embed_dim, embed_dim, dropout)
         self.gate_drug = nn.Linear(embed_dim * 2, 1)
         self.gate_dis = nn.Linear(embed_dim * 2, 1)
-        nn.init.constant_(self.gate_drug.bias, fusion_gate_bias)
-        nn.init.constant_(self.gate_dis.bias, fusion_gate_bias)
+        nn.init.constant_(self.gate_drug.bias, 0.0)
+        nn.init.constant_(self.gate_dis.bias, 0.0)
 
         self.bias_d = nn.Embedding(n_drugs, 1)
         self.bias_p = nn.Embedding(n_diseases, 1)
@@ -85,16 +77,6 @@ class BiGATFusionModel(nn.Module):
             drug_neighbors,
             disease_neighbors,
         )
-
-    def _initialize_embeddings(self, initialization):
-        if initialization == "scaled_normal":
-            nn.init.normal_(self.drug_emb.weight, std=self.embed_dim ** -0.5)
-            nn.init.normal_(self.disease_emb.weight, std=self.embed_dim ** -0.5)
-        elif initialization == "xavier":
-            nn.init.xavier_uniform_(self.drug_emb.weight)
-            nn.init.xavier_uniform_(self.disease_emb.weight)
-        elif initialization != "pytorch":
-            raise ValueError(f"Unknown embedding initialization: {initialization}")
 
     def _register_edge_buffers(
         self,
@@ -133,12 +115,6 @@ class BiGATFusionModel(nn.Module):
             self.drug_to_dis_dst,
         )
 
-        drug_topology = self._drop_topology(
-            drug_topology, self.drug_topology_dropout
-        )
-        disease_topology = self._drop_topology(
-            disease_topology, self.disease_topology_dropout
-        )
         drug_gate = torch.sigmoid(
             self.gate_drug(torch.cat([drug_feature, drug_topology], dim=1))
         )
@@ -150,12 +126,6 @@ class BiGATFusionModel(nn.Module):
             disease_gate * disease_feature + (1 - disease_gate) * disease_topology
         )
         return drug_fused, disease_fused
-
-    def _drop_topology(self, representation, probability):
-        if self.training and probability > 0:
-            keep = torch.rand((representation.size(0), 1), device=representation.device)
-            return representation * (keep >= probability)
-        return representation
 
     def logits_on_pairs(self, drug_idx, disease_idx):
         drug_z, disease_z = self.forward()

@@ -1,6 +1,8 @@
 # BiGAT-Fusion
 
-PyTorch implementation of BiGAT-Fusion for drug–disease association prediction.
+PyTorch implementation for drug–disease association prediction, combining dual-view
+graphs, direction-specific bidirectional attention, node-wise fusion gates, and a
+hybrid residual decoder.
 
 ## Installation
 
@@ -11,35 +13,32 @@ pip install -r requirements.txt
 pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/xpu
 ```
 
-## Evaluation
-
-The package supports pair-level, drug cold-start, and disease cold-start
-evaluation. Cold-start AP and AUROC are calculated per held-out entity and
-macro-averaged within each fold.
+## Training and evaluation
 
 ```powershell
-# Pair-level: 10 repetitions of 10-fold cross-validation
-python run_fullcv.py --protocol pair --folds 10 --repeats 10 --device xpu
-
-# Drug cold-start: 10 repetitions of 10-fold cross-validation
-python run_fullcv.py --protocol drug_cold --folds 10 --cold_repeats 10 --device xpu
-
-# Disease cold-start: 10 repetitions of 10-fold cross-validation
-python run_fullcv.py --protocol disease_cold --folds 10 --cold_repeats 10 --device xpu
+python run_fullcv.py --device xpu
 ```
 
-Use `--protocol all` to run all protocols.
+Defaults: `data/Gdataset.mat`, 10 repetitions of 10-fold pair-level
+cross-validation, 4,000 epochs per fold. Each test fold uses the next fold for
+validation. Training uses BCE and three uniformly sampled global unknown pairs
+per positive. Validation AUPRC selects the checkpoint; validation AUROC controls
+the learning-rate scheduler. Test AUROC and trapezoidal AUPRC use every pair in
+the test fold.
 
 ## Code structure
 
-- `bigat_fusion/data.py`: dataset loading and similarity graphs
-- `bigat_fusion/layers.py`: graph attention and decoder layers
-- `bigat_fusion/model.py`: BiGAT-Fusion model
-- `bigat_fusion/protocols.py`: pair-level and cold-start partitions
-- `bigat_fusion/metrics.py`: AUROC and AUPRC calculation
-- `bigat_fusion/training.py`: fold training and model selection
-- `bigat_fusion/artifacts.py`: checkpoints, metrics, and interpretation outputs
-- `bigat_fusion/cli.py`: command-line configuration
+- `data.py`: dataset loading and similarity graphs
+- `layers.py`: graph attention and residual decoder
+- `model.py`: dual-view encoding and fusion
+- `protocols.py`: cross-validation partitions
+- `sampling.py`: negative sampling
+- `training.py`: optimization and checkpoint selection
+- `metrics.py`: prediction scores and evaluation
+- `artifacts.py`: checkpoints, metrics, attention weights, and gates
+- `runtime.py`, `cli.py`: device setup and command-line options
+
+Modules are in `bigat_fusion/`.
 
 ## Outputs
 

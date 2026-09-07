@@ -34,41 +34,15 @@ def pair_metrics(labels, scores):
     return {
         "AUROC": metrics.auc(false_positive_rate, true_positive_rate),
         "AUPRC": metrics.auc(recall, precision),
-        "EligibleEntities": 0,
     }
 
 
-def macro_entity_metrics(labels, scores, groups):
-    """Calculate per-entity AUROC and AP, then macro-average them."""
-    entity_aurocs, entity_average_precisions = [], []
-    for entity in np.unique(groups):
-        mask = groups == entity
-        entity_labels = labels[mask]
-        entity_scores = scores[mask]
-        if entity_labels.any():
-            entity_average_precisions.append(
-                metrics.average_precision_score(entity_labels, entity_scores)
-            )
-        if np.unique(entity_labels).size == 2:
-            entity_aurocs.append(metrics.roc_auc_score(entity_labels, entity_scores))
-    if not entity_average_precisions or not entity_aurocs:
-        raise ValueError("No eligible entities were available for macro evaluation.")
-    return {
-        "AUROC": float(np.mean(entity_aurocs)),
-        "AUPRC": float(np.mean(entity_average_precisions)),
-        "EligibleEntities": len(entity_average_precisions),
-    }
-
-
-def evaluate(model, edges, positive_set, device, batch_size, group_axis=None):
-    """Evaluate a pair domain with pair-level or entity-macro metrics."""
+def evaluate(model, edges, positive_set, device, batch_size):
+    """Evaluate continuous scores over the complete candidate fold."""
     scores = predict_pairs(model, edges, device, batch_size)
     labels = np.fromiter(
         (1 if edge in positive_set else 0 for edge in edges), dtype=np.int8
     )
     if np.unique(labels).size != 2:
         raise ValueError("Evaluation domain must contain both positive and unknown pairs.")
-    if group_axis is None:
-        return pair_metrics(labels, scores)
-    groups = np.fromiter((edge[group_axis] for edge in edges), dtype=np.int64)
-    return macro_entity_metrics(labels, scores, groups)
+    return pair_metrics(labels, scores)

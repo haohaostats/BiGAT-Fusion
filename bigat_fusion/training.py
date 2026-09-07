@@ -13,8 +13,8 @@ from torch.utils.data import DataLoader
 from .artifacts import save_fold_outputs, save_metric_log
 from .metrics import evaluate
 from .model import BiGATFusionModel
-from .protocols import build_domains, build_folds, candidate_items, metric_group_axis
-from .sampling import TrainingDataset, collate_training_pairs
+from .protocols import build_domains, build_folds, candidate_items
+from .sampling import GlobalUnknownTrainingDataset, collate_training_pairs
 
 
 def topology_neighbors(n_drugs, n_diseases, positive_edges):
@@ -27,7 +27,7 @@ def topology_neighbors(n_drugs, n_diseases, positive_edges):
     return drug_neighbors, disease_neighbors
 
 
-def build_model(data, positive_edges, args, device, protocol):
+def build_model(data, positive_edges, args, device):
     """Construct a model and its fold-specific topology graph."""
     drug_neighbors, disease_neighbors = topology_neighbors(
         data["n_drugs"], data["n_diseases"], positive_edges
@@ -42,14 +42,6 @@ def build_model(data, positive_edges, args, device, protocol):
         embed_dim=args.embed_dim,
         hidden_dim=args.hidden_dim,
         dropout=args.dropout,
-        embedding_init=args.embedding_init,
-        fusion_gate_bias=args.fusion_gate_bias,
-        drug_topology_dropout=(
-            args.cold_topology_dropout if protocol == "drug_cold" else 0.0
-        ),
-        disease_topology_dropout=(
-            args.cold_topology_dropout if protocol == "disease_cold" else 0.0
-        ),
     ).to(device)
 
 
@@ -79,12 +71,11 @@ def build_optimizer(model, args):
     return optimizer, scheduler
 
 
-def build_training_loader(positive_edges, negative_pool, args, repeat, fold):
-    """Create the sampled training loader for one fold."""
-    dataset = TrainingDataset(
-        positive_edges,
-        negative_pool,
-        args.neg_k,
+def build_training_loader(positive_edges, positive_set, n_drugs, n_diseases,
+                          args, repeat, fold):
+    """Sample uniformly from the complete unknown-pair universe."""
+    dataset = GlobalUnknownTrainingDataset(
+        positive_edges, n_drugs, n_diseases, positive_set, args.neg_k,
         random.Random(args.seed + repeat * 1000 + fold),
     )
     return DataLoader(
@@ -96,11 +87,11 @@ def build_training_loader(positive_edges, negative_pool, args, repeat, fold):
     )
 
 
-def fit_fold(model, loader, validation_domain, positive_set, device, args, group_axis):
-    """Train one fold and restore the checkpoint selected on validation AUROC."""
+def fit_fold(model, loader, validation_domain, positive_set, device, args):
+    """Train one fold and restore the checkpoint selected on validation AUPRC."""
     optimizer, scheduler = build_optimizer(model, args)
     criterion = nn.BCEWithLogitsLoss()
-    best_validation, best_state, stale_evaluations = -1.0, None, 0
+    best_validation, best_state = -1.0, None
 
     for epoch in range(1, args.epochs + 1):
         model.train()
@@ -121,26 +112,30 @@ def fit_fold(model, loader, validation_domain, positive_set, device, args, group
                 positive_set,
                 device,
                 args.eval_batch_size,
-                group_axis,
             )
-            validation_auroc = validation_metrics["AUROC"]
-            scheduler.step(validation_auroc)
-            if validation_auroc > best_validation + 1e-6:
-                best_validation = validation_auroc
+            scheduler.step(validation_metrics["AUROC"])
+            validation_auprc = validation_metrics["AUPRC"]
+            if validation_auprc > best_validation + 1e-6:
+                best_validation = validation_auprc
+                selected_validation = validation_metrics.copy()
+                selected_epoch = epoch
                 best_state = {
                     name: value.detach().cpu().clone()
                     for name, value in model.state_dict().items()
                 }
-                stale_evaluations = 0
-            else:
-                stale_evaluations += 1
-            if args.early_stop and stale_evaluations >= args.es_patience:
-                break
+            if epoch % 200 == 0 or epoch == args.epochs:
+                print(f"Epoch {epoch}: validation AUPRC={validation_auprc:.4f}, "
+                      f"AUROC={validation_metrics['AUROC']:.4f}", flush=True)
 
     if best_state is None:
         raise RuntimeError("No validation checkpoint was produced.")
     model.load_state_dict(best_state)
-    return best_validation
+    return {
+        "metric": "AUPRC",
+        "epoch": selected_epoch,
+        "AUPRC": selected_validation["AUPRC"],
+        "AUROC": selected_validation["AUROC"],
+    }
 
 
 def fold_record(
@@ -153,7 +148,7 @@ def fold_record(
     test_domain,
     training_positive,
     positive_set,
-    best_validation,
+    selection,
     test_metrics,
 ):
     """Assemble the metric row for one completed fold."""
@@ -167,48 +162,49 @@ def fold_record(
         "TestPairs": len(test_domain),
         "TrainPos": len(training_positive),
         "TestPos": sum(edge in positive_set for edge in test_domain),
-        "BestValAUROC": best_validation,
+        "SelectionMetric": selection["metric"],
+        "BestEpoch": selection["epoch"],
+        "BestValAUPRC": selection["AUPRC"],
+        "SelectedValAUROC": selection["AUROC"],
         "AUROC": test_metrics["AUROC"],
         "AUPRC": test_metrics["AUPRC"],
-        "EligibleEntities": test_metrics["EligibleEntities"],
     }
 
 
-def run_protocol(args, protocol, data, device):
+def run_protocol(args, data, device):
     """Run every requested repetition and fold for one protocol."""
     n_drugs, n_diseases = data["n_drugs"], data["n_diseases"]
     positive_set = data["assoc_pos_set"]
     dataset_name = Path(args.mat_path).stem
-    repeat_count = args.repeats if protocol == "pair" else args.cold_repeats
-    group_axis = metric_group_axis(protocol)
+    protocol = "pair"
+    repeat_count = args.repeats
     records = []
 
+    pair_split_rng = random.Random(args.seed)
     for repeat in range(repeat_count):
-        items = candidate_items(protocol, n_drugs, n_diseases)
-        folds = build_folds(items, args.folds, args.seed + repeat)
+        items = candidate_items(n_drugs, n_diseases)
+        split_seed = pair_split_rng.randint(0, 1 << 30)
+        folds = build_folds(items, args.folds, split_seed)
         selected_folds = args.fold_ids if args.fold_ids is not None else range(args.folds)
         for fold in selected_folds:
             training_domain, validation_domain, test_domain, validation_fold = build_domains(
-                protocol, n_drugs, n_diseases, folds, fold
+                folds, fold
             )
             training_positive = [
                 edge for edge in training_domain if edge in positive_set
             ]
-            negative_pool = [
-                edge for edge in training_domain if edge not in positive_set
-            ]
-            model = build_model(data, training_positive, args, device, protocol)
+            model = build_model(data, training_positive, args, device)
             loader = build_training_loader(
-                training_positive, negative_pool, args, repeat, fold
+                training_positive, positive_set, n_drugs, n_diseases,
+                args, repeat, fold
             )
-            best_validation = fit_fold(
+            selection = fit_fold(
                 model,
                 loader,
                 validation_domain,
                 positive_set,
                 device,
                 args,
-                group_axis,
             )
             test_metrics = evaluate(
                 model,
@@ -216,7 +212,6 @@ def run_protocol(args, protocol, data, device):
                 positive_set,
                 device,
                 args.eval_batch_size,
-                group_axis,
             )
             record = fold_record(
                 protocol,
@@ -228,7 +223,7 @@ def run_protocol(args, protocol, data, device):
                 test_domain,
                 training_positive,
                 positive_set,
-                best_validation,
+                selection,
                 test_metrics,
             )
             records.append(record)
